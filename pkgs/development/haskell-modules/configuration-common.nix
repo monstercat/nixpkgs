@@ -305,6 +305,9 @@ self: super: {
   wai-middleware-throttle = dontCheck super.wai-middleware-throttle; # https://github.com/creichert/wai-middleware-throttle/issues/1
   xmlgen = dontCheck super.xmlgen;
 
+  # sloowwwww
+  lens = dontCheck super.lens;        # http://hydra.cryp.to/build/926195/log/raw
+
   # These packages try to access the network.
   amqp = dontCheck super.amqp;
   amqp-conduit = dontCheck super.amqp-conduit;
