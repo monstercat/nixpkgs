@@ -1154,6 +1154,10 @@ let
     python = python26;
   };
 
+  cudatoolkit7 = callPackage ../development/compilers/cudatoolkit/7.0.nix {
+    python = python26;
+  };
+
   cudatoolkit = cudatoolkit5;
 
   curlFull = curl.override {
