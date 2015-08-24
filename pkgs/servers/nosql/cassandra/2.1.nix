@@ -6,12 +6,13 @@
 , gawk
 , bash
 , getopt
+, procps
 }:
 
 let
 
-  version = "2.1.6";
-  sha256 = "1xq96h33f4xmld114mrd57z396f9ykcj0xy50fnnhy5mhafkn4n2";
+  version = "2.1.8";
+  sha256 = "1x92nw81pa4s95lv9qj42p05ry3ajk8klsqgc30zv7sjzm7cc31s";
 
 in
 
@@ -23,7 +24,7 @@ stdenv.mkDerivation rec {
     url = "http://apache.cs.utah.edu/cassandra/${version}/apache-${name}-bin.tar.gz";
   };
 
-  buildInputs = [ makeWrapper ];
+  nativeBuildInputs = [ makeWrapper ];
 
   installPhase = ''
     mkdir $out
@@ -34,7 +35,8 @@ stdenv.mkDerivation rec {
         --set JAVA_HOME ${jre} \
         --prefix PATH : ${bash}/bin \
         --prefix PATH : ${getopt}/bin \
-        --prefix PATH : ${gawk}/bin
+        --prefix PATH : ${gawk}/bin \
+        --prefix PATH : ${procps}/bin
     done
 
     wrapProgram $out/bin/cqlsh --prefix PATH : ${python}/bin

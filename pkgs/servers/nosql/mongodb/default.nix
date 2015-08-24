@@ -4,7 +4,7 @@
 
 with stdenv.lib;
 
-let version = "3.0.3";
+let version = "3.0.5";
     system-libraries = [
       "pcre"
       "wiredtiger"
@@ -27,6 +27,7 @@ let version = "3.0.3";
       "--wiredtiger=${if stdenv.is64bit then "on" else "off"}"
       "--js-engine=v8-3.25"
       "--use-sasl-client"
+      "--disable-warnings-as-errors"
       "--variant-dir=nixos" # Needed so we don't produce argument lists that are too long for gcc / ld
       "--extrapath=${concatStringsSep "," buildInputs}"
     ] ++ map (lib: "--use-system-${lib}") system-libraries);
@@ -36,7 +37,7 @@ in stdenv.mkDerivation rec {
 
   src = fetchurl {
     url = "http://downloads.mongodb.org/src/mongodb-src-r${version}.tar.gz";
-    sha256 = "01q8fas8afch50h4kjdrdrcrb1qx243wafz6zdsbc2waq60mlxjp";
+    sha256 = "1nvzbxgyjsp72w4fvfd8zxpj38zv0whn5p53jv9v2rdaj5wnmc85";
   };
 
   nativeBuildInputs = [ scons ];

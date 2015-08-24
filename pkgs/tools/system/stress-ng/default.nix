@@ -1,15 +1,15 @@
-{ stdenv, fetchurl, attr }:
+{ stdenv, fetchurl, attr, keyutils }:
 
-let version = "0.04.06"; in
+let version = "0.04.15"; in
 stdenv.mkDerivation rec {
   name = "stress-ng-${version}";
 
   src = fetchurl {
-    sha256 = "1iwl16gzxl1gq7gkn6pwhk6ss641n11wgf37yd47jcdr5pac6z9s";
+    sha256 = "1jazcfviqx3pyhv2jzsp6y37ndsj1smfk6jacpxg9vrg5k3cm3wq";
     url = "http://kernel.ubuntu.com/~cking/tarballs/stress-ng/${name}.tar.gz";
   };
 
-  buildInputs = [ attr ];
+  buildInputs = [ attr keyutils ];
 
   patchPhase = ''
     substituteInPlace Makefile --replace "/usr" ""

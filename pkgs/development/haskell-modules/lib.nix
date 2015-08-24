@@ -31,6 +31,9 @@ rec {
   addBuildDepend = drv: x: addBuildDepends drv [x];
   addBuildDepends = drv: xs: overrideCabal drv (drv: { buildDepends = (drv.buildDepends or []) ++ xs; });
 
+  addPkgconfigDepend = drv: x: addPkgconfigDepends drv [x];
+  addPkgconfigDepends = drv: xs: overrideCabal drv (drv: { buildDepends = (drv.pkgconfigDepends or []) ++ xs; });
+
   enableCabalFlag = drv: x: appendConfigureFlag (removeConfigureFlag drv "-f-${x}") "-f${x}";
   disableCabalFlag = drv: x: appendConfigureFlag (removeConfigureFlag drv "-f${x}") "-f-${x}";
 
@@ -79,4 +82,6 @@ rec {
 
   triggerRebuild = drv: i: overrideCabal drv (drv: { postUnpack = ": trigger rebuild ${toString i}"; });
 
+  #FIXME: throw this away sometime in the future. added 2015-08-18
+  withHoogle = throw "withHoogle is no longer supported, use ghcWithHoogle instead";
 }

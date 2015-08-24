@@ -2,7 +2,7 @@
 , pkgconfig, rlog }:
 
 let version = "1.8.1"; in
-stdenv.mkDerivation rec {
+stdenv.mkDerivation {
   name = "encfs-${version}";
 
   src = fetchFromGitHub {
@@ -12,7 +12,8 @@ stdenv.mkDerivation rec {
     owner = "vgough";
   };
 
-  buildInputs = [ autoreconfHook boost fuse openssl perl pkgconfig rlog ];
+  buildInputs = [ boost fuse openssl rlog ];
+  nativeBuildInputs = [ autoreconfHook perl pkgconfig ];
 
   configureFlags = [
     "--with-boost-serialization=boost_wserialization"

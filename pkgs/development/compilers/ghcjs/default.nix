@@ -41,22 +41,22 @@ let
   version = "0.1.0";
   ghcjsBoot = fetchgit {
     url = git://github.com/ghcjs/ghcjs-boot.git;
-    rev = "5c3ca2db12bd3e92d3eeaead8bcb6b347174a30f"; # 7.10 branch
-    sha256 = "0rpfb73bd0maccg3bjf51l23byy0h2i47wph99wblmkdp8ywxkpf";
+    rev = "d435c60b62d24b7a4117493f7aaecbfa09968fe6"; # 7.10 branch
+    sha256 = "07vhmjz21ccnqccms003550xacmwb08pjdkhnjcwcbl2603v4na1";
     fetchSubmodules = true;
   };
   shims = fetchgit {
     url = git://github.com/ghcjs/shims.git;
-    rev = "6ada4bf1a084d1b80b993303d35ed863d219b031"; # master branch
-    sha256 = "0dhfnjj3rxdbb2m1pbnjc2yp4xcgsfdrsinljgdmg0hpqkafp4vc";
+    rev = "0b670ca27fff3f0bad515c37e56ccb8b4d6758fb"; # master branch
+    sha256 = "19zq79f2y59lw7c8m100awh3rcra5yhbsvpb5xmp3mq6grac7h08";
   };
 in mkDerivation (rec {
   pname = "ghcjs";
   inherit version;
   src = fetchgit {
     url = git://github.com/ghcjs/ghcjs.git;
-    rev = "15b7a34ddc11075a335e097f6109ad57ca03edab"; # master branch
-    sha256 = "0h6jdwd7lh3rkfsqpq3s6iavqkz1a88grzcxrcqj4rjilzdw288q";
+    rev = "39c1cb6d5d2551b306a7957a0e7f682f4a048490"; # master branch
+    sha256 = "1v2hpmhdssgf1jmchiwkvp5j8j6rw3k0hpkf326vb8l1b0kbmibr";
   };
   isLibrary = true;
   isExecutable = true;
@@ -103,7 +103,7 @@ in mkDerivation (rec {
 
     # Make the patches be relative their corresponding package's directory.
     # See: https://github.com/ghcjs/ghcjs-boot/pull/12
-    for patch in $topDir/ghcjs-boot/patches/*.patch; do
+    for patch in "$topDir/ghcjs-boot/patches/"*.patch; do
       echo "fixing patch: $patch"
       sed -i -e 's@ \(a\|b\)/boot/[^/]\+@ \1@g' $patch
     done

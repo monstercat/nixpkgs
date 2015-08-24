@@ -17,7 +17,7 @@ let
   version = "2015-06-09";
 
   # Note: this is NOT the libvterm already in nixpkgs, but some NIH silliness:
-  neovimLibvterm = let version = "2015-02-23"; in stdenv.mkDerivation rec {
+  neovimLibvterm = let version = "2015-02-23"; in stdenv.mkDerivation {
     name = "neovim-libvterm-${version}";
 
     src = fetchFromGitHub {
@@ -27,7 +27,8 @@ let
       owner = "neovim";
     };
 
-    buildInputs = [ libtool perl ];
+    buildInputs = [ perl ];
+    nativeBuildInputs = [ libtool ];
 
     makeFlags = [ "PREFIX=$(out)" ]
       ++ stdenv.lib.optional stdenv.isDarwin "LIBTOOL=${libtool}/bin/libtool";
@@ -53,7 +54,7 @@ let
     ignoreCollisions = true;
   };
 
-  neovim = stdenv.mkDerivation rec {
+  neovim = stdenv.mkDerivation {
     name = "neovim-${version}";
 
     src = fetchFromGitHub {
@@ -66,8 +67,6 @@ let
     enableParallelBuilding = true;
 
     buildInputs = [
-      makeWrapper
-      cmake
       glib
       libtermkey
       libuv
@@ -79,12 +78,14 @@ let
       libmsgpack
       ncurses
       neovimLibvterm
-      pkgconfig
       unibilium
     ] ++ optional withJemalloc jemalloc;
 
     nativeBuildInputs = [
+      cmake
       gettext
+      makeWrapper
+      pkgconfig
     ];
 
     LUA_CPATH="${lpeg}/lib/lua/${lua.luaversion}/?.so;${luabitop}/lib/lua/5.2/?.so";
@@ -134,9 +135,9 @@ let
     };
   };
 
-in if (vimAlias == false && configure == null) then neovim else stdenv.mkDerivation rec {
+in if (vimAlias == false && configure == null) then neovim else stdenv.mkDerivation {
   name = "neovim-${version}-configured";
-  buildInputs = [ makeWrapper ];
+  nativeBuildInputs = [ makeWrapper ];
   buildCommand = ''
     mkdir -p $out/bin
     for item in ${neovim}/bin/*; do

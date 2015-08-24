@@ -78,12 +78,6 @@ in {
         type = types.int;
       };
 
-      readOnlyPort = mkOption {
-        description = "Kubernets apiserver read-only port.";
-        default = 7080;
-        type = types.int;
-      };
-
       securePort = mkOption {
         description = "Kubernetes apiserver secure port.";
         default = 6443;
@@ -98,6 +92,12 @@ in {
 
       tlsPrivateKeyFile = mkOption {
         description = "Kubernetes apiserver private key file.";
+        default = "";
+        type = types.str;
+      };
+
+      clientCaFile = mkOption {
+        description = "Kubernetes apiserver CA file for client auth.";
         default = "";
         type = types.str;
       };
@@ -156,6 +156,19 @@ in {
         description = "Kubernetes CIDR notation IP range from which to assign portal IPs";
         default = "10.10.10.10/16";
         type = types.str;
+      };
+
+      runtimeConfig = mkOption {
+        description = "Api runtime configuration";
+        default = "";
+        example = "api/all=false,api/v1=true";
+        type = types.str;
+      };
+
+      admissionControl = mkOption {
+        description = "Kubernetes admission control plugins to use.";
+        default = ["AlwaysAdmit"];
+        type = types.listOf types.str;
       };
 
       extraOpts = mkOption {
@@ -222,12 +235,6 @@ in {
         type = types.str;
       };
 
-      machines = mkOption {
-        description = "Kubernetes controller list of machines to schedule to schedule onto";
-        default = [config.networking.hostName];
-        type = types.listOf types.str;
-      };
-
       extraOpts = mkOption {
         description = "Kubernetes controller extra command line options.";
         default = "";
@@ -242,6 +249,12 @@ in {
         type = types.bool;
       };
 
+      registerNode = mkOption {
+        description = "Whether to auto register kubelet with API server.";
+        default = true;
+        type = types.bool;
+      };
+
       address = mkOption {
         description = "Kubernetes kubelet info server listening address.";
         default = "0.0.0.0";
@@ -252,6 +265,20 @@ in {
         description = "Kubernets kubelet info server listening port.";
         default = 10250;
         type = types.int;
+      };
+
+      healthz = {
+        bind = mkOption {
+          description = "Kubernetes kubelet healthz listening address.";
+          default = "127.0.0.1";
+          type = types.str;
+        };
+
+        port = mkOption {
+          description = "Kubernetes kubelet healthz port.";
+          default = 10248;
+          type = types.int;
+        };
       };
 
       hostname = mkOption {
@@ -274,7 +301,7 @@ in {
 
       cadvisorPort = mkOption {
         description = "Kubernetes kubelet local cadvisor port.";
-        default = config.services.cadvisor.port;
+        default = 4194;
         type = types.int;
       };
 
@@ -368,7 +395,6 @@ in {
             --etcd-servers=${concatMapStringsSep "," (f: "http://${f}") cfg.etcdServers} \
             --insecure-bind-address=${cfg.apiserver.address} \
             --insecure-port=${toString cfg.apiserver.port} \
-            --read-only-port=${toString cfg.apiserver.readOnlyPort} \
             --bind-address=${cfg.apiserver.publicAddress} \
             --allow-privileged=${if cfg.apiserver.allowPrivileged then "true" else "false"} \
             ${optionalString (cfg.apiserver.tlsCertFile!="")
@@ -377,11 +403,16 @@ in {
               "--tls-private-key-file=${cfg.apiserver.tlsPrivateKeyFile}"} \
             ${optionalString (cfg.apiserver.tokenAuth!=[])
               "--token-auth-file=${tokenAuthFile}"} \
+            ${optionalString (cfg.apiserver.clientCaFile!="")
+              "--client-ca-file=${cfg.apiserver.clientCaFile}"} \
             --authorization-mode=${cfg.apiserver.authorizationMode} \
             ${optionalString (cfg.apiserver.authorizationMode == "ABAC")
               "--authorization-policy-file=${authorizationPolicyFile}"} \
             --secure-port=${toString cfg.apiserver.securePort} \
             --service-cluster-ip-range=${cfg.apiserver.portalNet} \
+            ${optionalString (cfg.apiserver.runtimeConfig!="")
+              "--runtime-config=${cfg.apiserver.runtimeConfig}"} \
+            --admission_control=${concatStringsSep "," cfg.apiserver.admissionControl} \
             --logtostderr=true \
             ${optionalString cfg.verbose "--v=6 --log-flush-frequency=1s"} \
             ${cfg.apiserver.extraOpts}
@@ -425,7 +456,6 @@ in {
             --address=${cfg.controllerManager.address} \
             --port=${toString cfg.controllerManager.port} \
             --master=${cfg.controllerManager.master} \
-            --machines=${concatStringsSep "," cfg.controllerManager.machines} \
             --logtostderr=true \
             ${optionalString cfg.verbose "--v=6 --log-flush-frequency=1s"} \
             ${cfg.controllerManager.extraOpts}
@@ -445,8 +475,11 @@ in {
           export PATH="/bin:/sbin:/usr/bin:/usr/sbin:$PATH"
           exec ${cfg.package}/bin/kubelet \
             --api-servers=${concatMapStringsSep "," (f: "http://${f}") cfg.kubelet.apiServers}  \
+            --register-node=${if cfg.kubelet.registerNode then "true" else "false"} \
             --address=${cfg.kubelet.address} \
             --port=${toString cfg.kubelet.port} \
+            --healthz-bind-address=${cfg.kubelet.healthz.bind} \
+            --healthz-port=${toString cfg.kubelet.healthz.port} \
             --hostname-override=${cfg.kubelet.hostname} \
             --allow-privileged=${if cfg.kubelet.allowPrivileged then "true" else "false"} \
             --root-dir=${cfg.dataDir} \
@@ -497,9 +530,6 @@ in {
           User = "kubernetes";
         };
       };
-
-      services.skydns.enable = mkDefault true;
-      services.skydns.domain = mkDefault cfg.kubelet.clusterDomain;
     })
 
     (mkIf (any (el: el == "master") cfg.roles) {
@@ -511,14 +541,15 @@ in {
 
     (mkIf (any (el: el == "node") cfg.roles) {
       virtualisation.docker.enable = mkDefault true;
-      services.cadvisor.enable = mkDefault true;
-      services.cadvisor.port = mkDefault 4194;
       services.kubernetes.kubelet.enable = mkDefault true;
       services.kubernetes.proxy.enable = mkDefault true;
     })
 
     (mkIf (any (el: el == "node" || el == "master") cfg.roles) {
       services.etcd.enable = mkDefault true;
+
+      services.skydns.enable = mkDefault true;
+      services.skydns.domain = mkDefault cfg.kubelet.clusterDomain;
     })
 
     (mkIf (
@@ -533,8 +564,10 @@ in {
         serviceConfig.Type = "oneshot";
         script = ''
           mkdir -p /var/run/kubernetes
-          chown kubernetes /var/run/kubernetes
-          ln -fs ${pkgs.writeText "kubernetes-dockercfg" cfg.dockerCfg} /var/run/kubernetes/.dockercfg
+          chown kubernetes /var/lib/kubernetes
+
+          rm ${cfg.dataDir}/.dockercfg || true
+          ln -fs ${pkgs.writeText "kubernetes-dockercfg" cfg.dockerCfg} ${cfg.dataDir}/.dockercfg
         '';
       };
 
